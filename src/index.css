@@ -1,0 +1,6 @@
+@import "tailwindcss";
+
+.pulse {
+  @apply transition-all duration-300
+}
+
