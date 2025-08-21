@@ -64,13 +64,19 @@ const generateBoard = (option, deck = DECK) => {
 };
 
 const App = () => {
+  const [marked, setMarked] = useState([]);
+
+  const toggleMark = (i) => {
+    setMarked((prev) =>
+      prev.includes(i) ? prev.filter((idx) => idx !== i) : [...prev, i]
+    );
+  };
+
   const [board, setBoard] = useState([]);
   const nodeRef = useRef(null);
   const [status, setStatus] = useState(null);
   const [modals, setModals] = useState(false)
   const [mode, setMode] = useState(1)
-
-
 
   const handleGenerate = (opt) => {
     const board = generateBoard(opt);
@@ -147,17 +153,11 @@ const App = () => {
     return rows;
   };
 
-  const loadAllBoards = () => JSON.parse(localStorage.getItem('cartones') || '[]');
-
-  // Ejemplo de cómo restaurar el primero guardado:
-  const restoreFirst = () => {
-    const all = loadAllBoards();
-    if (!all.length) return;
-    const rows = parseOrder(all[0].order); // 4 o 8 filas
-    setBoard(rows.length === 8 ? rows : rows.flat()); // si es 4x4 puedes dejar flat o rows
-  };
-
-
+  const changeToPlay = () => {
+    setMode(2)
+    setBoard([])
+    setMarked([])
+  }
 
   // Guarda en localStorage bajo la clave "cartones" como [{name, order}]
   const saveCurrentBoard = (name = "Cartón sin nombre") => {
@@ -165,28 +165,56 @@ const App = () => {
       toast.error('Genera un cartón primero', { position: 'top-center', duration: 3000 });
       return;
     }
+    const currentBoards = JSON.parse(localStorage.getItem('cartones') || '[]')
+    const boardWithNameExists = currentBoards.filter(brd => brd.label === name)
+    console.log(boardWithNameExists);
+    if (boardWithNameExists.length !== 0) {
+      toast.error('Ya hay un cartón guardado con ese nombre', { position: 'top-center', duration: 3000 });
+      return;
+    }
     const order = serializeBoard(board);
     const prev = JSON.parse(localStorage.getItem('cartones') || '[]');
-    prev.push({ name, order });
+    prev.push({ label: name, value: order });
     localStorage.setItem('cartones', JSON.stringify(prev));
     toast.success('Cartón guardado', { position: 'top-center' });
   };
 
-  console.log(loadAllBoards());
   return (
     <div className={`p-3 ${is8x8 ? "min-h-screen" : "h-screen"} max-h-fit`}>
       <Toaster />
       {modals && (<SaveCardModal closeModals={() => setModals(false)} modals={modals} />)}
       <div className='bg-white rounded-md shadow-md h-full flex justify-center items-center p-3 space-x-4'>
         <div className="w-[80%] h-full border rounded-md border-gray-300 flex items-center justify-center py-2">
-          {!board.length ? <p className="font-semibold text-gray-500 text-2xl">Selecciona una opción para generar el cartón</p> : (
+          {!board.length ? (
+            <p className="font-semibold text-gray-500 text-2xl">
+              Selecciona una opción para generar el cartón
+            </p>
+          ) : (
             <div
               ref={nodeRef}
-              className={`grid rounded-md overflow-hidden  ${!is8x8 && 'gap-1'}`}
-              style={{ gridTemplateColumns: `repeat(${is8x8 ? 8 : 4}, minmax(0, 1fr))`, width: is8x8 ? 800 : 400 }}>
+              className={`grid rounded-md overflow-hidden ${!is8x8 && "gap-1"}`}
+              style={{
+                gridTemplateColumns: `repeat(${is8x8 ? 8 : 4}, minmax(0, 1fr))`,
+                width: is8x8 ? 800 : 400,
+              }}
+            >
               {flat.map((cell, i) => (
-                <div key={i} className="aspect-auto flex items-center justify-center p-1" style={{ backgroundColor: getQuadBg(i) }}>
-                  <img src={cell.img} alt={cell.id} className="w-full h-full object-contain" />
+                <div
+                  key={i}
+                  onClick={() => toggleMark(i)}
+                  className="aspect-auto relative flex items-center justify-center p-1 cursor-pointer"
+                  style={{ backgroundColor: getQuadBg(i) }}
+                >
+                  <img
+                    src={cell.img}
+                    alt={cell.id}
+                    className="w-full h-full object-contain"
+                  />
+                  {marked.includes(i) && (
+                    <span className="absolute text-red-700 text-7xl font-bold select-none">
+                      X
+                    </span>
+                  )}
                 </div>
               ))}
             </div>
@@ -194,12 +222,10 @@ const App = () => {
         </div>
         <div className='w-[20%] h-fit '>
           <div className="w-full flex justify-center items-center gap-4">
-            <div onClick={()=>setMode(1)} className={`${mode === 1 && 'bg-green-500'} bg-green-300 text-white h-32 w-1/2 rounded-md shadow-md border border-gray-100 hover:bg-green-500 pulse cursor-pointer flex justify-center items-center font-semibold text-2xl `}>Crear</div>
-            <div onClick={()=>setMode(2)} className={`${mode === 2 && 'bg-blue-500'} bg-blue-300 text-white h-32 w-1/2 rounded-md shadow-md border border-gray-100 hover:bg-blue-500 pulse cursor-pointer flex justify-center items-center font-semibold text-2xl`}>Jugar</div>
+            <div onClick={() => setMode(1)} className={`${mode === 1 && 'bg-green-500'} bg-green-300 text-white h-32 w-1/2 rounded-md shadow-md border border-gray-100 hover:bg-green-500 pulse cursor-pointer flex justify-center items-center font-semibold text-2xl `}>Crear</div>
+            <div onClick={changeToPlay} className={`${mode === 2 && 'bg-blue-500'} bg-blue-300 text-white h-32 w-1/2 rounded-md shadow-md border border-gray-100 hover:bg-blue-500 pulse cursor-pointer flex justify-center items-center font-semibold text-2xl`}>Jugar</div>
           </div>
-          {mode === 1 ? <CreateBlock /> : <PlayBlock />}
-
-          <button onClick={() => setModals(true)} className={` ${isBusy ? "bg-gray-400 cursor-not-allowed" : "bg-black"} flex justify-center items-center text-center rounded-md cursor-pointer pulse px-3 w-full py-1 font-semibold text-white text-lg`} >Usar</button >
+          {mode === 1 ? <CreateBlock handleGenerate={handleGenerate} downloading={downloading} isBusy={isBusy} saveCurrentBoard={saveCurrentBoard} /> : <PlayBlock setBoard={setBoard} parseOrder={parseOrder} />}
         </div>
       </div>
     </div>
