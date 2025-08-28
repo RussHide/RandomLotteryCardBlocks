@@ -153,8 +153,8 @@ const App = () => {
     return rows;
   };
 
-  const changeToPlay = () => {
-    setMode(2)
+  const changeToPlay = (mode) => {
+    setMode(mode)
     setBoard([])
     setMarked([])
   }
@@ -186,34 +186,14 @@ const App = () => {
       <div className='bg-white rounded-md shadow-md h-full flex justify-center items-center p-3 space-x-4'>
         <div className="w-[80%] h-full border rounded-md border-gray-300 flex items-center justify-center py-2">
           {!board.length ? (
-            <p className="font-semibold text-gray-500 text-2xl">
-              Selecciona una opción para generar el cartón
-            </p>
+            <p className="font-semibold text-gray-500 text-2xl">Selecciona una opción para generar el cartón</p>
           ) : (
-            <div
-              ref={nodeRef}
-              className={`grid rounded-md overflow-hidden ${!is8x8 && "gap-1"}`}
-              style={{
-                gridTemplateColumns: `repeat(${is8x8 ? 8 : 4}, minmax(0, 1fr))`,
-                width: is8x8 ? 800 : 400,
-              }}
-            >
+            <div ref={nodeRef} className={`grid rounded-md overflow-hidden ${!is8x8 && "gap-1"}`} style={{ gridTemplateColumns: `repeat(${is8x8 ? 8 : 4}, minmax(0, 1fr))`, width: is8x8 ? 800 : 400, }}>
               {flat.map((cell, i) => (
-                <div
-                  key={i}
-                  onClick={() => toggleMark(i)}
-                  className="aspect-auto relative flex items-center justify-center p-1 cursor-pointer"
-                  style={{ backgroundColor: getQuadBg(i) }}
-                >
-                  <img
-                    src={cell.img}
-                    alt={cell.id}
-                    className="w-full h-full object-contain"
-                  />
+                <div key={i} onClick={() => toggleMark(i)} className="aspect-auto relative flex items-center justify-center p-1 cursor-pointer" style={{ backgroundColor: getQuadBg(i) }}>
+                  <img src={cell.img} alt={cell.id} className="w-full h-full object-contain " draggable={false} />
                   {marked.includes(i) && (
-                    <span className="absolute text-red-700 text-7xl font-bold select-none">
-                      X
-                    </span>
+                    <span className="absolute text-red-700 text-7xl font-bold select-none border-white">X</span>
                   )}
                 </div>
               ))}
@@ -222,8 +202,8 @@ const App = () => {
         </div>
         <div className='w-[20%] h-fit '>
           <div className="w-full flex justify-center items-center gap-4">
-            <div onClick={() => setMode(1)} className={`${mode === 1 && 'bg-green-500'} bg-green-300 text-white h-32 w-1/2 rounded-md shadow-md border border-gray-100 hover:bg-green-500 pulse cursor-pointer flex justify-center items-center font-semibold text-2xl `}>Crear</div>
-            <div onClick={changeToPlay} className={`${mode === 2 && 'bg-blue-500'} bg-blue-300 text-white h-32 w-1/2 rounded-md shadow-md border border-gray-100 hover:bg-blue-500 pulse cursor-pointer flex justify-center items-center font-semibold text-2xl`}>Jugar</div>
+            <div onClick={() => changeToPlay(1)} className={`${mode === 1 && 'bg-green-500'} bg-green-300 text-white h-32 w-1/2 rounded-md shadow-md border border-gray-100 hover:bg-green-500 pulse cursor-pointer flex justify-center items-center font-semibold text-2xl `}>Crear</div>
+            <div onClick={() => changeToPlay(2)} className={`${mode === 2 && 'bg-blue-500'} bg-blue-300 text-white h-32 w-1/2 rounded-md shadow-md border border-gray-100 hover:bg-blue-500 pulse cursor-pointer flex justify-center items-center font-semibold text-2xl`}>Jugar</div>
           </div>
           {mode === 1 ? <CreateBlock handleGenerate={handleGenerate} downloading={downloading} isBusy={isBusy} saveCurrentBoard={saveCurrentBoard} /> : <PlayBlock setBoard={setBoard} parseOrder={parseOrder} />}
         </div>
